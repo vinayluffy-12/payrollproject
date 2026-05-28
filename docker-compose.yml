@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # 1. MySQL 8.0 Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: payrollos-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: payrollos
+      MYSQL_ROOT_PASSWORD: root_password_here
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  # 2. Redis Cache Service
+  redis:
+    image: redis:alpine
+    container_name: payrollos-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  # 3. Node.js Express API Service
+  backend:
+    build:
+      context: ./payrollos/backend
+      dockerfile: Dockerfile
+    container_name: payrollos-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DB_DIALECT=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_NAME=payrollos
+      - DB_USER=root
+      - DB_PASS=root_password_here
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=payrollos_super_jwt_secret_key_rs255_here
+    depends_on:
+      - mysql
+      - redis
+
+  # 4. Python FastAPI Fraud ML Microservice
+  fraud-service:
+    build:
+      context: ./payrollos/fraud-service
+      dockerfile: Dockerfile
+    container_name: payrollos-fraud
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    depends_on:
+      - backend
+
+  # 5. React Frontend served via custom Nginx reverse-proxy
+  frontend:
+    build:
+      context: ./payrollos/frontend
+      dockerfile: Dockerfile
+    container_name: payrollos-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
+  redis-data:

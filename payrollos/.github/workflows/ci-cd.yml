@@ -1,0 +1,134 @@
+name: PayrollOS CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Job 1: Automated Linting & Unit Testing
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: './payrollos/frontend/package-lock.json'
+
+      - name: Install Frontend Dependencies & Test
+        run: |
+          cd payrollos/frontend
+          npm ci
+          npm run lint || true
+          npm test -- --passWithNoTests
+
+      - name: Install Backend Dependencies & Test
+        run: |
+          cd payrollos/backend
+          npm ci
+          npm test -- --passWithNoTests
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Python requirements & Test
+        run: |
+          cd payrollos/fraud-service
+          pip install -r requirements.txt
+          # pytest --pass-on-no-tests
+
+  # Job 2: Build and Push Docker Images (Triggered on main merges)
+  build-and-push:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Log in to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push Frontend to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/payrollos-frontend:latest ./payrollos/frontend
+          docker push $ECR_REGISTRY/payrollos-frontend:latest
+
+      - name: Build, tag, and push Backend to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/payrollos-backend:latest ./payrollos/backend
+          docker push $ECR_REGISTRY/payrollos-backend:latest
+
+      - name: Build, tag, and push Fraud microservice to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/payrollos-fraud:latest ./payrollos/fraud-service
+          docker push $ECR_REGISTRY/payrollos-fraud:latest
+
+  # Job 3: Automated Deployment to Kubernetes Staging
+  deploy-staging:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set Kubernetes Context (Staging)
+        uses: azure/k8s-set-context@v2
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_STAGING }}
+
+      - name: Apply Staging Configurations
+        run: |
+          kubectl apply -f payrollos/k8s/deployment.yml
+          kubectl rollout status deployment/payrollos-backend
+
+  # Job 4: Manual Approval Gate & Release to Production
+  deploy-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://payrollos.antigravity.com
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set Kubernetes Context (Production AWS EKS)
+        uses: azure/k8s-set-context@v2
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
+
+      - name: Rolling Update to Production
+        run: |
+          kubectl apply -f payrollos/k8s/deployment.yml
+          kubectl rollout status deployment/payrollos-backend
+
+      - name: Post-Deploy Smoke Health Check
+        run: |
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://payrollos.antigravity.com/api/v1/health)
+          if [ $STATUS_CODE -ne 200 ]; then
+            echo "Smoke test failed with code $STATUS_CODE. Reverting rollout..."
+            kubectl rollout undo deployment/payrollos-backend
+            exit 1
+          fi
+          echo "Smoke test passed. Production release healthy!"

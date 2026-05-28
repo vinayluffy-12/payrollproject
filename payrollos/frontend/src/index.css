@@ -1,0 +1,126 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@theme {
+  --color-primary-navy: #1A1F5E;
+  --color-primary-DEFAULT: #1A1F5E;
+  --color-accent-violet: #5B5EA6;
+  --color-accent-DEFAULT: #5B5EA6;
+  --color-gold-DEFAULT: #D4A017;
+  --color-gold-light: #F8E8C1;
+  --color-teal-DEFAULT: #0D7377;
+  --color-teal-light: #E2F3F3;
+  --color-danger-DEFAULT: #C0392B;
+  --color-danger-light: #FADBD8;
+  --color-surface-DEFAULT: #F0F2FD;
+  --color-surface-dark: #E1E4F8;
+  
+  --font-sans: 'Inter', sans-serif;
+  
+  --breakpoint-mobile: 375px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1280px;
+}
+
+:root {
+  font-family: 'Inter', sans-serif;
+  background-color: #F0F2FD; /* Default to surface background */
+  color: #374151;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism card utilities */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-panel {
+  background: rgba(26, 31, 94, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Premium Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s infinite;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F0F2FD;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #5B5EA6;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1A1F5E;
+}
+
+/* GitHub Contribution Heatmap Cell Colors */
+.heatmap-cell-0 { background-color: #C0392B; } /* Absent - Red */
+.heatmap-cell-1 { background-color: #F8D7DA; } /* Low presence */
+.heatmap-cell-2 { background-color: #D4EDDA; } /* Med presence */
+.heatmap-cell-3 { background-color: #5B5EA6; } /* High presence - Violet */
+.heatmap-cell-4 { background-color: #0D7377; } /* Perfect presence - Teal */
+
+/* Premium gradients */
+.gradient-navy-indigo {
+  background: linear-gradient(135deg, #1A1F5E 0%, #3F4499 50%, #5B5EA6 100%);
+}
+
+.gradient-gold {
+  background: linear-gradient(135deg, #D4A017 0%, #F1C40F 100%);
+}
+
+.gradient-teal {
+  background: linear-gradient(135deg, #0D7377 0%, #14B8A6 100%);
+}
+
+/* Custom interactive inputs styling */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #5B5EA6;
+  box-shadow: 0 0 0 2px rgba(91, 94, 166, 0.2);
+}

@@ -1,0 +1,9 @@
+{
+  "name": "payrollos-monorepo",
+  "version": "1.0.0",
+  "description": "PayrollOS Monorepo root package",
+  "scripts": {
+    "build": "cd payrollos/frontend && npm install && npm run build",
+    "vercel-build": "npm run build"
+  }
+}
