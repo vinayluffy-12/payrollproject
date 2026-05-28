@@ -7,23 +7,8 @@
       "destination": "/api/index.js"
     },
     {
-      "source": "/assets/:path*",
-      "destination": "/payrollos/frontend/dist/assets/:path*"
-    },
-    {
       "source": "/(.*)",
-      "destination": "/payrollos/frontend/dist/$1",
-      "has": [
-        {
-          "type": "header",
-          "key": "x-ignored",
-          "value": "just-a-placeholder"
-        }
-      ]
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/payrollos/frontend/dist/index.html"
+      "destination": "/index.html"
     }
   ]
 }

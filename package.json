@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "PayrollOS Monorepo root package",
   "scripts": {
-    "build": "cd payrollos/frontend && npm install && npm run build",
+    "build": "cd payrollos/frontend && npm install && npm run build && cd ../.. && node -e \"const fs = require('fs'); if(fs.existsSync('dist')){fs.rmSync('dist', {recursive:true})}; fs.renameSync('payrollos/frontend/dist', 'dist')\"",
     "vercel-build": "npm run build"
   }
 }
